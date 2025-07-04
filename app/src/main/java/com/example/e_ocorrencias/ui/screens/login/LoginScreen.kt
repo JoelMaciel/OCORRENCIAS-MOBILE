@@ -19,6 +19,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,17 +35,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.e_ocorrencias.R
+import com.example.e_ocorrencias.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hiltViewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val (showError, setShowError) = remember { mutableStateOf(false) }
-    val (emailError, setEmailError) = remember { mutableStateOf(false) }
-    val (passwordError, setPasswordError) = remember { mutableStateOf(false) }
+    val authResult by authViewModel.authResult.collectAsState()
+
+    val (error, setError) = remember { mutableStateOf(false) }
+    val errorMessage = remember { mutableStateOf("") }
 
     val placeholderColor = Color(0xFFA0A0A0)
     val backgroundColor = Color(0xFFF5F5F5)
@@ -53,8 +61,26 @@ fun LoginScreen(navController: NavController) {
     val unfocusedBorderColor = Color(0xFF263238)
     val roundedCornerShape = RoundedCornerShape(16.dp)
 
-    val mockEmail = "joel@example.com"
-    val mockPassword = "senha123"
+    LaunchedEffect(authResult) {
+        when (authResult) {
+            is AuthViewModel.AuthResult.Success -> {
+                navController.navigate("Ocorrencias") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+
+            is AuthViewModel.AuthResult.Error -> {
+                val error = authResult as AuthViewModel.AuthResult.Error
+                errorMessage.value = when (error.code) {
+                    401 -> "Email ou senha incorretos"
+                    else -> error.message
+                }
+                setError(true)
+            }
+
+            else -> {}
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -107,11 +133,11 @@ fun LoginScreen(navController: NavController) {
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it; setEmailError(false) },
+                        onValueChange = { email = it; setError(false) },
                         label = { Text("Email") },
-                        isError = emailError,
+                        isError = error,
                         supportingText = {
-                            if (emailError) {
+                            if (error) {
                                 Text(
                                     text = "O campo Email é obrigatório.",
                                     color = Color.Red,
@@ -122,8 +148,8 @@ fun LoginScreen(navController: NavController) {
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = cardColor,
                             unfocusedContainerColor = cardColor,
-                            focusedIndicatorColor = if (emailError) Color.Red else focusedBorderColor,
-                            unfocusedIndicatorColor = if (emailError) Color.Red else unfocusedBorderColor,
+                            focusedIndicatorColor = if (error) Color.Red else focusedBorderColor,
+                            unfocusedIndicatorColor = if (error) Color.Red else unfocusedBorderColor,
                             errorIndicatorColor = Color.Red,
                             focusedLabelColor = focusedBorderColor,
                             unfocusedLabelColor = placeholderColor,
@@ -137,12 +163,12 @@ fun LoginScreen(navController: NavController) {
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it; setPasswordError(false) },
+                        onValueChange = { password = it; setError(false) },
                         label = { Text("Senha") },
                         visualTransformation = PasswordVisualTransformation(),
-                        isError = passwordError,
+                        isError = error,
                         supportingText = {
-                            if (passwordError) {
+                            if (error) {
                                 Text(
                                     text = "O campo Senha é obrigatório.",
                                     color = Color.Red,
@@ -153,8 +179,8 @@ fun LoginScreen(navController: NavController) {
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = cardColor,
                             unfocusedContainerColor = cardColor,
-                            focusedIndicatorColor = if (passwordError) Color.Red else focusedBorderColor,
-                            unfocusedIndicatorColor = if (passwordError) Color.Red else unfocusedBorderColor,
+                            focusedIndicatorColor = if (error) Color.Red else focusedBorderColor,
+                            unfocusedIndicatorColor = if (error) Color.Red else unfocusedBorderColor,
                             errorIndicatorColor = Color.Red,
                             focusedLabelColor = focusedBorderColor,
                             unfocusedLabelColor = placeholderColor,
@@ -172,14 +198,15 @@ fun LoginScreen(navController: NavController) {
                             val isPasswordEmpty = password.isBlank()
 
                             if (isEmailEmpty || isPasswordEmpty) {
-                                setEmailError(isEmailEmpty)
-                                setPasswordError(isPasswordEmpty)
-                            } else if (email == mockEmail && password == mockPassword) {
-                                navController.navigate("ocorrencias") {
-                                    popUpTo("login") { inclusive = true }
+                                errorMessage.value = when {
+                                    isEmailEmpty -> "O campo Email é obrigatório"
+                                    else -> "O campo Senha é obrigatório"
                                 }
+                                setError(true)
                             } else {
-                                setShowError(true)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    authViewModel.login(email, password)
+                                }
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -193,7 +220,7 @@ fun LoginScreen(navController: NavController) {
                         Text("Entrar", fontSize = 18.sp)
                     }
 
-                    if (showError) {
+                    if (error) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
