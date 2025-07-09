@@ -39,7 +39,6 @@ fun WelcomeScreen(navController: NavController) {
         GradientStartColor,
         GradientEndColor
     )
-
     Box(
         modifier = Modifier
             .fillMaxSize()

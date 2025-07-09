@@ -43,5 +43,4 @@ interface OcorrenciaService {
 
     @PATCH("ocorrencias/{id}/cancelar")
     suspend fun statusCanceled(@Path("id") id: String): Response<Unit>
-
 }

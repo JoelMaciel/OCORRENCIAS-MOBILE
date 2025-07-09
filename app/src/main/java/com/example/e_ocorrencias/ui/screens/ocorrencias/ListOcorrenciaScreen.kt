@@ -43,13 +43,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.e_ocorrencias.ui.theme.createButtonColors
+import com.example.e_ocorrencias.ui.viewmodel.AuthViewModel
 import com.example.e_ocorrencias.ui.viewmodel.OcorrenciaViewModel
 import com.example.e_ocorrencias.utils.getValue
 
 @Composable
 fun OcorrenciaListScreen(
     navController: NavController,
-    viewModel: OcorrenciaViewModel = hiltViewModel()
+    viewModel: OcorrenciaViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val ocorrencias by viewModel.ocorrencias.collectAsStateWithLifecycle()
     val refreshList by viewModel.refreshList.collectAsStateWithLifecycle()
@@ -57,6 +59,7 @@ fun OcorrenciaListScreen(
     val currentPage by viewModel.currentPage.collectAsStateWithLifecycle()
     val totalPages by viewModel.totalPages.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val user = authViewModel.getCurrentUser()
 
     val showWelcomeDialog = rememberSaveable { mutableStateOf(true) }
 
@@ -203,7 +206,7 @@ fun OcorrenciaListScreen(
                         text = buildAnnotatedString {
                             append("Bem-vindo ")
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("CB Nego Maciel")
+                                append(user?.nome ?: "")
                             }
                             append(", login efetuado com sucesso!")
                         },
