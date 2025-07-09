@@ -40,6 +40,7 @@ class AuthViewModel @Inject constructor(
                         loginResponse.accessToken,
                         loginResponse.refreshToken
                     )
+                    sessionManager.saveUserData(loginResponse.policial)
                     _authResult.value = AuthResult.Success(loginResponse.policial)
                 } ?: run {
                     _authResult.value = AuthResult.Error("Resposta inválida do servidor")
@@ -58,11 +59,15 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun hasRole(role: String): Boolean {
+        return sessionManager.getUserRoles().contains(role)
+    }
+
     fun logout() {
         sessionManager.clearTokens()
     }
 
     fun getCurrentUser(): PolicialInfo? {
-        return null
+        return sessionManager.getUserData()
     }
 }

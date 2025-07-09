@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +40,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.e_ocorrencias.R
 import com.example.e_ocorrencias.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -48,10 +48,14 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val authResult by authViewModel.authResult.collectAsState()
+    var emailError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
 
     val (error, setError) = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf("") }
+
+    val authResult by authViewModel.authResult.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val placeholderColor = Color(0xFFA0A0A0)
     val backgroundColor = Color(0xFFF5F5F5)
@@ -133,11 +137,14 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it; setError(false) },
+                        onValueChange = {
+                            email = it
+                            emailError = false
+                        },
                         label = { Text("Email") },
                         isError = error,
                         supportingText = {
-                            if (error) {
+                            if (emailError) {
                                 Text(
                                     text = "O campo Email é obrigatório.",
                                     color = Color.Red,
@@ -163,12 +170,15 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it; setError(false) },
+                        onValueChange = {
+                            password = it
+                            passwordError = false
+                        },
                         label = { Text("Senha") },
                         visualTransformation = PasswordVisualTransformation(),
                         isError = error,
                         supportingText = {
-                            if (error) {
+                            if (passwordError) {
                                 Text(
                                     text = "O campo Senha é obrigatório.",
                                     color = Color.Red,
@@ -197,14 +207,15 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
                             val isEmailEmpty = email.isBlank()
                             val isPasswordEmpty = password.isBlank()
 
+                            emailError = false
+                            passwordError = false
+
                             if (isEmailEmpty || isPasswordEmpty) {
-                                errorMessage.value = when {
-                                    isEmailEmpty -> "O campo Email é obrigatório"
-                                    else -> "O campo Senha é obrigatório"
-                                }
-                                setError(true)
+                                if (isEmailEmpty) emailError = true
+                                if (isPasswordEmpty) passwordError = true
+                                errorMessage.value = "Por favor, preencha todos os campos."
                             } else {
-                                CoroutineScope(Dispatchers.IO).launch {
+                                scope.launch(Dispatchers.IO) {
                                     authViewModel.login(email, password)
                                 }
                             }

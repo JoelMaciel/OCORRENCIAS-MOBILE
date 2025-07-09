@@ -112,6 +112,12 @@ fun AppNavigation() {
 
                     composable("ocorrencias") { OcorrenciaListScreen(navController) }
                     composable("ocorrencia_create") { OcorrenciaCreateScreen(navController) }
+
+                    composable("ocorrencias") {
+                        ProtectedRoute(navController = navController) {
+                            OcorrenciaListScreen(navController)
+                        }
+                    }
                     composable("ocorrencia_search") { OcorrenciaSearchScreen(navController) }
                     composable("ocorrencia_details/{ocorrenciaId}") { backStackEntry ->
                         val ocorrenciaId = backStackEntry.arguments?.getString("ocorrenciaId")

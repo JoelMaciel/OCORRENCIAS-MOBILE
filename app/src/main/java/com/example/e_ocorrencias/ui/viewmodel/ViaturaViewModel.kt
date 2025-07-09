@@ -60,7 +60,7 @@ class ViaturaViewModel @Inject constructor(
             }
             _isLoading.value = true
 
-            val result = viaturaRepository.getViaturas(_currentPage.value)
+            val result = viaturaRepository.getAllViaturas(_currentPage.value)
             result.onSuccess { response ->
                 _viaturas.value = _viaturas.value + response.viaturas
                 _totalPages.value = response.totalPages
