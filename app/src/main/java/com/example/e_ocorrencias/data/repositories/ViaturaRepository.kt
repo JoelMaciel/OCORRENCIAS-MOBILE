@@ -5,6 +5,7 @@ import com.example.e_ocorrencias.data.models.response.Viatura
 import com.example.e_ocorrencias.data.models.response.page.ViaturasResponse
 import com.example.e_ocorrencias.data.remote.ViaturaService
 import com.example.e_ocorrencias.utils.ErrorHandler
+import com.example.e_ocorrencias.utils.apiCallHandler
 import javax.inject.Inject
 
 class ViaturaRepository @Inject constructor(
@@ -13,24 +14,15 @@ class ViaturaRepository @Inject constructor(
 
 ) {
     private val errorViaturaNaoEncontrada = "Viatura não encontrada"
-    private val errorFalhaConexao = "Falha ao conectar ao servidor"
-    private val erroFalhaCarregarViatura = "Falha ao carregar viatura"
-    private val errorListaViaturas = "Lista de viaturas vazia"
+    private val errorListarViaturas = "Lista de viaturas vazia"
     private val errorSalvarViatura = "Falha ao salvar viatura"
 
-    suspend fun getViaturas(page: Int): Result<ViaturasResponse> {
-        return try {
-            val response = viaturaService.getViaturas(page)
-            if (response.isSuccessful) {
-                response.body()?.let { Result.success(it) }
-                    ?: Result.failure(Exception(errorListaViaturas))
-            } else {
-                val errorMessage =
-                    errorHandler.parse(response.errorBody(), erroFalhaCarregarViatura)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            throw Exception("$errorFalhaConexao: ${e.message}")
+    suspend fun getAllViaturas(page: Int): Result<ViaturasResponse> {
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorListarViaturas
+        ) {
+            viaturaService.getViaturas(page)
         }
     }
 
@@ -38,50 +30,32 @@ class ViaturaRepository @Inject constructor(
         prefixo: String? = null,
         status: String? = null
     ): Result<ViaturasResponse> {
-        return try {
-            val response = viaturaService.searchViaturas(
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorListarViaturas
+        ) {
+            viaturaService.searchViaturas(
                 prefixo = prefixo,
                 status = status
             )
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                val errorMessage = errorHandler.parse(response.errorBody(), errorListaViaturas)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("$errorListaViaturas: ${e.message}"))
         }
     }
 
     suspend fun getViaturaById(id: String): Result<Viatura> {
-        return try {
-            val response = viaturaService.getViaturaById(id)
-            if (response.isSuccessful) {
-                response.body()?.let { Result.success(it) }
-                    ?: Result.failure(Exception(errorViaturaNaoEncontrada))
-            } else {
-                val errorMessage =
-                    errorHandler.parse(response.errorBody(), erroFalhaCarregarViatura)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("$errorFalhaConexao: ${e.message}"))
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorViaturaNaoEncontrada
+        ) {
+            viaturaService.getViaturaById(id)
         }
     }
 
     suspend fun createViatura(viaturaRequest: ViaturaRequest): Result<Viatura> {
-        return try {
-            val response = viaturaService.createViatura(viaturaRequest)
-            if (response.isSuccessful) {
-                response.body()?.let { Result.success(it) }
-                    ?: Result.failure(Exception(errorSalvarViatura))
-            } else {
-                val errorMessage = errorHandler.parse(response.errorBody(), errorSalvarViatura)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("$errorFalhaConexao: ${e.message}"))
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorSalvarViatura
+        ) {
+            viaturaService.createViatura(viaturaRequest)
         }
     }
 }

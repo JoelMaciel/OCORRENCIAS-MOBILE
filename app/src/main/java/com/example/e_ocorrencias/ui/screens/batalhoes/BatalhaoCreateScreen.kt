@@ -69,7 +69,7 @@ fun BatalhaoCreateScreen(
     val (cepError, setCepError) = remember { mutableStateOf(false) }
 
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val createBatalionSuccess by viewModel.createBatalionSuccess.collectAsState()
+    val createBatalionSuccess by viewModel.isSaving.collectAsState()
     val (showSuccessDialog, setShowSuccessDialog) = remember { mutableStateOf(false) }
 
     LaunchedEffect(createBatalionSuccess) {

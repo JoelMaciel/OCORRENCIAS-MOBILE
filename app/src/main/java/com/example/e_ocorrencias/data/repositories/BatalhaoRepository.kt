@@ -5,33 +5,45 @@ import com.example.e_ocorrencias.data.models.request.EnderecoRequest
 import com.example.e_ocorrencias.data.models.response.Batalhao
 import com.example.e_ocorrencias.data.models.response.page.BatalhaoResponse
 import com.example.e_ocorrencias.data.remote.BatalhaoService
+import com.example.e_ocorrencias.utils.ErrorHandler
+import com.example.e_ocorrencias.utils.apiCallHandler
 import javax.inject.Inject
 
 
 class BatalhaoRepository @Inject constructor(
-    private val batalhaoService: BatalhaoService
+    private val batalhaoService: BatalhaoService,
+    private val errorHandler: ErrorHandler
 ) {
-    suspend fun getAllBatalhoes(page: Int): BatalhaoResponse {
-        return try {
+    private val errorListarBatalhoes = "Lista de batalhões vazia"
+    private val errorFalhaConexao = "Falha ao conectar ao servidor"
+    private val errorSalvarBatalhao = "Falha ao salvar batalhao"
+    private val errorBatalhaoNaoEncontrado = "Batalhao não encontrada"
+
+    suspend fun getAllBatalhoes(page: Int): Result<BatalhaoResponse> {
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorListarBatalhoes
+        ) {
             batalhaoService.getAllBatalhoes(page)
-        } catch (e: Exception) {
-            throw Exception("Falha na conexão: ${e.message}")
         }
     }
 
-    suspend fun createBatalhao(batalhaoRequest: BatalhaoRequest): Batalhao {
-        return try {
+    suspend fun createBatalhao(batalhaoRequest: BatalhaoRequest): Result<Batalhao> {
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorSalvarBatalhao
+        ) {
             batalhaoService.createBatalhao(batalhaoRequest)
-        } catch (e: Exception) {
-            throw Exception("Falha ao criar batalhao:, $ { e.message }")
         }
+
     }
 
-    suspend fun getBatalhaoById(id: String): Batalhao {
-        return try {
+    suspend fun getBatalhaoById(id: String): Result<Batalhao> {
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorBatalhaoNaoEncontrado
+        ) {
             batalhaoService.getBatalhaoById(id)
-        } catch (e: Exception) {
-            throw Exception("Falha ao buscar batalhão: ${e.message}", e)
         }
     }
 
@@ -45,9 +57,8 @@ class BatalhaoRepository @Inject constructor(
         bairro: String? = null,
         cidade: String? = null,
         uf: String? = null,
-        cep: String? = null,
-    ): Batalhao {
-
+        cep: String? = null
+    ): Result<Batalhao> {
         val enderecoRequest = EnderecoRequest(
             rua = rua ?: "",
             numero = numero ?: "",
@@ -57,33 +68,37 @@ class BatalhaoRepository @Inject constructor(
             uf = uf ?: "",
             cep = cep ?: ""
         )
+
         val batalhaoRequest = BatalhaoRequest(
             nome = nome ?: "",
             contato = contato ?: "",
             endereco = enderecoRequest
         )
-        return batalhaoService.updateBatalhao(id, batalhaoRequest)
+
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorSalvarBatalhao
+        ) {
+            batalhaoService.updateBatalhao(id, batalhaoRequest)
+        }
     }
 
-    suspend fun searchBatalhoes(nome: String? = null): BatalhaoResponse {
-        return try {
-            val response = batalhaoService.searchBatalhoes(nome = nome)
-            response
-        } catch (e: Exception) {
-            throw Exception("Falha ao buscar batalhoes: ${e.message}")
+    suspend fun searchBatalhoes(nome: String? = null): Result<BatalhaoResponse> {
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = "Nenhum batalhao encontrado"
+        ) {
+            batalhaoService.searchBatalhoes(nome = nome)
         }
     }
 
     suspend fun deleteBatalhao(id: String): Result<Unit> {
-        return try {
-            val response = batalhaoService.deleteBatalhao(id)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure((Exception("Falha ao deletar batalhão: ${response.message()}")))
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("Erro ao conectar ao servidor: ${e.message}"))
+        return apiCallHandler(
+            errorHandler = errorHandler,
+            errorMessageOnEmpty = errorFalhaConexao
+        ) {
+            batalhaoService.deleteBatalhao(id)
         }
     }
 }
+

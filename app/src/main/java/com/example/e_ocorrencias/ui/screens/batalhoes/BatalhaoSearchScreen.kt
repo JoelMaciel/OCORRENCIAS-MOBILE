@@ -55,7 +55,7 @@ fun BatalhaoSearchScreen(
 
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
-    val searchError by viewModel.searchError.collectAsStateWithLifecycle()
+    val searchError by viewModel.error.collectAsStateWithLifecycle()
     val hasSearched by viewModel.hasSearched.collectAsStateWithLifecycle()
     val isForSelection = navController.currentBackStackEntry?.arguments?.getBoolean("isForSelection") ?: false
 
